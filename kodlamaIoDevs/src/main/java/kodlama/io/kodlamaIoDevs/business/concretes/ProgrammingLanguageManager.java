@@ -1,98 +1,126 @@
 package kodlama.io.kodlamaIoDevs.business.concretes;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import kodlama.io.kodlamaIoDevs.business.abstracts.ProgrammingLanguageService;
+import kodlama.io.kodlamaIoDevs.business.requests.programminglanguagerequests.CreateProgrammingLanguageRequest;
+import kodlama.io.kodlamaIoDevs.business.requests.programminglanguagerequests.DeleteProgrammingLanguage;
+import kodlama.io.kodlamaIoDevs.business.requests.programminglanguagerequests.UpdateProgrammingLanguageRequest;
+import kodlama.io.kodlamaIoDevs.business.responses.programminglanguageresponse.GetAllProgrammingLanguageResponse;
+import kodlama.io.kodlamaIoDevs.business.responses.programminglanguageresponse.GetByIdProgrammingLanguageResponsse;
 import kodlama.io.kodlamaIoDevs.dataAccess.abstracts.ProgrammingLanguagesDao;
 import kodlama.io.kodlamaIoDevs.entities.concretes.ProgrammingLanguage;
 
-
 @Service
-public class ProgrammingLanguageManager implements ProgrammingLanguageService{
-	
-	private ProgrammingLanguagesDao programmingLanguagesDao ;
-	
+
+public class ProgrammingLanguageManager implements ProgrammingLanguageService {
+
+	private ProgrammingLanguagesDao programmingLanguagesDao;
+
 	boolean isExit = false;
-	
-	
 
 	public ProgrammingLanguageManager(ProgrammingLanguagesDao programmingLanguagesDao) {
 		this.programmingLanguagesDao = programmingLanguagesDao;
 	}
 
-	@Override
-	public List<ProgrammingLanguage> getAll() {
-			
-		return programmingLanguagesDao.getAll();
-	
-	}
+	// getallName
 
 	@Override
-	public void add(ProgrammingLanguage programmingLanguage) throws Exception {
-			
-		if(programmingLanguage.getpLanguage()==null || programmingLanguage.getpLanguage().length()==0) {
-			  throw new Exception("This field cannot be empty");
+	public List<GetAllProgrammingLanguageResponse> getAll() {
+		List<ProgrammingLanguage> programmingLanguages = programmingLanguagesDao.findAll();
+
+		List<GetAllProgrammingLanguageResponse> programmingLanguagesResponse = new ArrayList<GetAllProgrammingLanguageResponse>();
+
+		for (ProgrammingLanguage programmingLanguage : programmingLanguages) {
+			GetAllProgrammingLanguageResponse responseItem = new GetAllProgrammingLanguageResponse();
+			responseItem.setId(programmingLanguage.getId());
+			responseItem.setPLanguageName(programmingLanguage.getPLanguageName());
+			programmingLanguagesResponse.add(responseItem);
+		}
+		return programmingLanguagesResponse;
+
+	}
+	
+	//get item by id
+	
+	@Override
+	public GetByIdProgrammingLanguageResponsse getById(int id) {
+		
+		ProgrammingLanguage programmingLanguage =  programmingLanguagesDao.findById(id).get();
+		GetByIdProgrammingLanguageResponsse response = new GetByIdProgrammingLanguageResponsse();
+		response.setName(programmingLanguage.getPLanguageName());
+		return response;
+	}
+
+	// add new language
+
+	@Override
+	public void add(CreateProgrammingLanguageRequest createProgrammingLanguageRequest) throws Exception {
+		ProgrammingLanguage programmingLanguage = new ProgrammingLanguage();
+		programmingLanguage.setPLanguageName(createProgrammingLanguageRequest.getName());
+		
+		if(createProgrammingLanguageRequest.getName()==null|| createProgrammingLanguageRequest.getName().length()==0) {
+			throw new Exception("Program name cannot be empty");
 		}
 		else {
-			for(ProgrammingLanguage planguage : programmingLanguagesDao.getAll()) {
-				if(isTheLanguageExist(programmingLanguage)==true){
-					throw new Exception("Sorry that name is already existed");
-				}
-				else {
-					System.out.println("Programming language added and id numbers is : " + programmingLanguage.getId());
-					programmingLanguagesDao.add(programmingLanguage);
-				}
+			if (isTheLanguageExist(createProgrammingLanguageRequest.getName())==true) {
+				throw new Exception("Program name already in use.");
+			} else {
+				this.programmingLanguagesDao.save(programmingLanguage);
+				System.out.println("Programming language added and id name is : " + programmingLanguage.getPLanguageName());
 			}
 		}
-		
 
 	}
+	
+	//validator
 
-	@Override
-	public void update(int id, String newName) {	
-		for(ProgrammingLanguage pLanguage : programmingLanguagesDao.getAll()) {
-			if(pLanguage.getpLanguage()==newName) {
-				System.out.println("Sorry that name is already existed");
-			}
-			else {
-				programmingLanguagesDao.update(id, newName);
-			}
-		}
-		
-		
-		
-	}
+	public boolean isTheLanguageExist(String languageName) {
+		List<ProgrammingLanguage> programmingLanguages = programmingLanguagesDao.findAll();
 
-	@Override
-	public void delete(int id) {
-		for(ProgrammingLanguage pLanguage : programmingLanguagesDao.getAll()) {
-			if(pLanguage.getId()!=id) {
-				System.out.println("There is no such programming language");
-			}
-			else {
-				programmingLanguagesDao.delete(id);
-			}
-		}
-		
-	}
-
-	@Override
-	public ProgrammingLanguage getById(int id) {
-		return programmingLanguagesDao.getById(id);
-	}
-
-	@Override
-	public boolean isTheLanguageExist(ProgrammingLanguage language) {
-
-		for(ProgrammingLanguage planguage : programmingLanguagesDao.getAll()) {
-			if(planguage.getpLanguage().toUpperCase() ==language.getpLanguage().toUpperCase()||planguage.getId()==language.getId()){
+		for (ProgrammingLanguage planguage : programmingLanguages) {
+			if (planguage.getPLanguageName().equalsIgnoreCase(languageName)) {
 				isExit = true;
 			}
 		}
-		
 		return isExit;
+
 	}
+
+
+
+	//update item 
+	
+	@Override
+	public void update(int id, UpdateProgrammingLanguageRequest updateProgrammingLanguageRequest) throws Exception {	
+		ProgrammingLanguage programmingLanguage = programmingLanguagesDao.findById(id).get();
+		
+		if(programmingLanguage.getPLanguageName().equalsIgnoreCase(updateProgrammingLanguageRequest.getName())){
+			throw new Exception("Program name already in use.");
+		}
+		else {
+			programmingLanguage.setPLanguageName(updateProgrammingLanguageRequest.getName());
+			this.programmingLanguagesDao.save(programmingLanguage);
+		}
+	}
+	
+	
+	
+	//delete item
+	
+	@Override
+	public void delete(DeleteProgrammingLanguage deleteProgrammingLanguage) {
+		this.programmingLanguagesDao.deleteById(deleteProgrammingLanguage.getId());
+	}
+
+	
+	
+
+
+	
 
 }
